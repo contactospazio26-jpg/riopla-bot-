@@ -9,46 +9,69 @@ const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Guardamos el último mensaje para evitar repeticiones (anti loro)
+let lastUserMessage = "";
+
 app.post("/webhook", async (req, res) => {
   try {
     const userMessage = (req.body.message || "").trim();
 
-    // 🚫 Evitar responder a mensajes vacíos o de sistema
+    // 🚫 Filtros anti-loro
     if (!userMessage) {
       return res.json({ reply: "" });
     }
+    if (/^\d{3,}$/.test(userMessage)) {
+      return res.json({ reply: "" }); // corta números/códigos
+    }
+    if (userMessage === lastUserMessage) {
+      return res.json({ reply: "" }); // corta repeticiones exactas
+    }
+    lastUserMessage = userMessage;
 
+    // 🔥 Prompt principal con identidad, intents y knowledge
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
           content: `
-Eres Agus de SkinCare 💖, promotora de bienestar. 
-Tu tono es siempre cálido, cercano y profesional.
-Refuerzas la autoestima del cliente y das confianza.
-No repites datos ya entregados y no inventas servicios que no existen.
-Cuando te pregunten tu nombre, responde: "Soy Agus de SkinCare, tu promotora de bienestar". 
-Si el cliente pregunta sobre tratamientos, explica de manera clara y breve, sin sonar enciclopédico.
-          `,
+Eres Agus de SkinCare, promotora de bienestar.
+Habla siempre en primera persona (YO).
+Tu tono es cálido, cercano y profesional.
+Evita repetir saludos de presentación más de una vez.
+Responde con frases breves, claras y útiles.
+No inventes información que no esté en tu conocimiento.
+
+--- INTENTS ---
+1. Si el cliente saluda, devuelves un saludo breve y preguntas en qué lo puedes ayudar.
+2. Si el cliente pregunta por precios, respondes que SkinCare tiene opciones variadas y que puede consultar por WhatsApp o agenda.
+3. Si el cliente pregunta por un tratamiento específico (ej: botox, hifu, enzimas), das una explicación breve de beneficios y ofreces acompañar en el proceso.
+4. Si el cliente pide promociones, hablas de descuentos en packs o combos de tratamientos, siempre reforzando el valor en bienestar y confianza médica.
+5. Si no entiendes, invitas amablemente a aclarar la consulta.
+
+--- KNOWLEDGE ---
+- SkinCare es una clínica estética con trayectoria, confianza profesional y tecnología avanzada.
+- Tratamientos disponibles: Botox, HIFU, Enzimas, HIFEM, Láser.
+- Diferencial: seguridad médica, resultados reales, seguimiento cercano.
+- Valores de marca: autocuidado, ética, refuerzo positivo de autoestima.
+          `
         },
         { role: "user", content: userMessage },
       ],
     });
 
     const reply =
-      completion.choices[0].message.content || "Disculpa, no entendí.";
+      completion.choices[0]?.message?.content || "Disculpa, no entendí.";
 
-    console.log("💬 Respuesta generada:", reply);
-
-    res.json({ reply }); // 🔥 Solo devuelve el texto limpio para Respond.io
+    res.json({ reply });
   } catch (error) {
     console.error("❌ Error en webhook:", error);
     res.status(500).json({ error: "Error procesando el webhook" });
   }
 });
 
-// 🔥 Importante: Vercel ignora app.listen, pero si corres local sirve:
-app.listen(3000, () => {
-  console.log("Servidor corriendo en puerto 3000");
+// 🚀 Puerto dinámico para Vercel
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Servidor corriendo en puerto ${port}`);
 });
