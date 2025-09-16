@@ -19,9 +19,9 @@ app.post("/webhook", async (req: Request, res: Response) => {
     const userMessage = req.body?.message || "Hola";
     console.log("📩 Mensaje recibido:", userMessage);
 
-    // Llamada al modelo GPT
+       // Llamada al modelo GPT
     const completion = await client.chat.completions.create({
-      model: "gpt-4o-mini", // podés cambiar a gpt-4o o gpt-3.5-turbo si querés probar
+      model: "gpt-4o-mini",
       messages: [
         { role: "system", content: "Sos Agus, promotora de bienestar de SkinCare 💖. Respondé cálida y profesionalmente." },
         { role: "user", content: userMessage }
@@ -29,6 +29,9 @@ app.post("/webhook", async (req: Request, res: Response) => {
       max_tokens: 100,
       temperature: 0.8
     });
+
+    // 🚨 Enviar crudo lo que devuelve OpenAI
+    res.json(completion);
 
     console.log("📝 Respuesta completa de OpenAI:", JSON.stringify(completion, null, 2));
 
