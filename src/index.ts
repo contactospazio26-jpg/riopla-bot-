@@ -1,20 +1,23 @@
+import express from "express";
+import bodyParser from "body-parser";
 import OpenAI from "openai";
 
+const app = express();
+app.use(bodyParser.json());
+
+// Cliente OpenAI con tu API key (asegurate que esté cargada en Vercel)
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Solo POST permitido" });
-  }
-
+// Webhook principal
+app.post("/webhook", async (req, res) => {
   try {
     const userMessage =
       req.body.message?.text || req.body.message || req.body.text || "";
 
     if (!userMessage.trim()) {
-      return res.status(200).json({ reply: "" });
+      return res.json({ reply: "" });
     }
 
     const completion = await client.chat.completions.create({
@@ -36,9 +39,12 @@ Responde breve, claro y directo.
     const reply =
       completion.choices[0]?.message?.content || "Disculpa, no entendí.";
 
-    return res.status(200).json({ reply });
+    res.json({ reply }); // 🔥 siempre devuelve JSON plano
   } catch (error) {
     console.error("❌ Error en webhook:", error);
-    return res.status(500).json({ error: "Error procesando el webhook" });
+    res.status(500).json({ error: "Error procesando el webhook" });
   }
-}
+});
+
+// 👇 ESTA es la diferencia clave: no usamos app.listen en Vercel
+export default app;
