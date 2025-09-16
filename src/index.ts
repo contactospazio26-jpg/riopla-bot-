@@ -5,9 +5,10 @@ import fetch from "node-fetch";
 const app = express();
 app.use(bodyParser.json());
 
+// Endpoint principal
 app.post("/webhook", async (req: Request, res: Response) => {
   try {
-    // Mensaje entrante desde Respond.io
+    // Mensaje que viene de Respond.io
     const userMessage = req.body?.message || "Hola";
 
     // Llamada a OpenAI
@@ -18,9 +19,9 @@ app.post("/webhook", async (req: Request, res: Response) => {
         "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-4o-mini", // podés cambiar a otro modelo si querés
         messages: [
-          { role: "system", content: "Sos Agus, asistente cálido y profesional de SkinCare. Responde de forma breve y empática." },
+          { role: "system", content: "Sos Agus, promotora de bienestar de SkinCare 💖. Respondé cálida y profesionalmente." },
           { role: "user", content: userMessage }
         ],
         max_tokens: 100,
@@ -30,18 +31,21 @@ app.post("/webhook", async (req: Request, res: Response) => {
 
     const data = await openaiRes.json();
 
-    // Texto generado por OpenAI
+    // Log en los registros de Vercel (para depuración)
+    console.log("Respuesta OpenAI:", JSON.stringify(data, null, 2));
+
+    // Tomar el texto generado o fallback
     const reply = data.choices?.[0]?.message?.content || "Disculpa, no entendí.";
 
-    // Respuesta en formato Respond.io-friendly
+    // Responder a Respond.io
     res.json({ reply });
 
   } catch (error) {
     console.error("Error en webhook:", error);
-    res.status(500).json({ reply: "Ocurrió un error, intenta más tarde." });
+    res.status(500).json({ reply: "Ocurrió un error, intenta más tarde 💔" });
   }
 });
 
-// Vercel no necesita listen(), solo exportar
+// Vercel necesita exportar la app
 export default app;
 
