@@ -16,17 +16,13 @@ app.post("/webhook", async (req, res) => {
   try {
     const userMessage = (req.body.message || "").trim();
 
-    // 🚫 Filtros anti-loro
-    if (!userMessage) {
-      return res.json({ reply: "" });
-    }
-    if (/^\d{3,}$/.test(userMessage)) {
-      return res.json({ reply: "" }); // corta números/códigos
-    }
-    if (userMessage === lastUserMessage) {
-      return res.json({ reply: "" }); // corta repeticiones exactas
-    }
-    lastUserMessage = userMessage;
+    // 🚫 Filtros anti-loro (simplificados)
+if (!userMessage) {
+  return res.json({ reply: "" });
+}
+if (/^\d{3,}$/.test(userMessage)) {
+  return res.json({ reply: "" }); // corta números/códigos
+}
 
     // 🔥 Prompt principal con identidad, intents y knowledge
     const completion = await client.chat.completions.create({
