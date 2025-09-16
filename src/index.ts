@@ -1,48 +1,35 @@
-import express, { Request, Response } from "express";
+import express from "express";
 import bodyParser from "body-parser";
 import OpenAI from "openai";
 
 const app = express();
 app.use(bodyParser.json());
 
-// Cliente OpenAI con la API key desde Vercel
 const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
-console.log("🚀 Servidor iniciado en Vercel, escuchando /webhook");
-
-app.post("/webhook", async (req: Request, res: Response) => {
+app.post("/webhook", async (req, res) => {
   try {
-    console.log("👉 Entró al endpoint /webhook");
+    const userMessage = req.body.message || "Hola";
 
-    const userMessage = req.body?.message || "Hola";
-    console.log("📩 Mensaje recibido:", userMessage);
-
-       // Llamada al modelo GPT
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
-        { role: "system", content: "Sos Agus, promotora de bienestar de SkinCare 💖. Respondé cálida y profesionalmente." },
-        { role: "user", content: userMessage }
+        { role: "system", content: "Eres Agus de SkinCare, promotora de bienestar, cálida y profesional." },
+        { role: "user", content: userMessage },
       ],
-      max_tokens: 100,
-      temperature: 0.8
     });
 
-    // 🚨 Enviar crudo lo que devuelve OpenAI
-    res.json(completion);
+    const reply = completion.choices[0].message.content || "Disculpa, no entendí.";
 
-    console.log("📝 Respuesta completa de OpenAI:", JSON.stringify(completion, null, 2));
-
-    const reply = completion.choices[0]?.message?.content || "Disculpa, no entendí.";
-    console.log("✅ Texto final enviado al cliente:", reply);
-
-    res.json({ reply });
+    res.json({ reply }); // 🔥 solo devuelve el texto limpio
   } catch (error) {
-    console.error("❌ Error en webhook:", error);
-    res.status(500).json({ reply: "Ocurrió un error, intenta más tarde 💔" });
+    console.error(error);
+    res.status(500).json({ error: "Error procesando el webhook" });
   }
 });
 
-export default app;
+app.listen(3000, () => {
+  console.log("Servidor corriendo en puerto 3000");
+});
