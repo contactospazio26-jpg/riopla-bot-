@@ -6,8 +6,8 @@ app.use(express.json());
 
 app.post('/webhook', async (req, res) => {
   const { message, state } = req.body || {};
-  const reply = await respond(message, state || {});
-  res.json(reply);
+  const replyObj = await respond(message, state || {});
+  res.json(replyObj); // devuelve {reply, state}
 });
 
 app.get('/health', (_req, res) => res.send('ok'));
