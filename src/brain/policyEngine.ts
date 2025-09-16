@@ -1,48 +1,37 @@
-import policy from '../../prompt/policy.json' assert { type: 'json' };
+import fs from "fs";
+import path from "path";
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// cargar policy.json
+const policyPath = path.resolve("prompt/policy.json");
+const policy = JSON.parse(fs.readFileSync(policyPath, "utf-8"));
 
 export async function respond(message: string, state: any) {
-  // Aseguramos que siempre exista el objeto state
-  state.contact = state.contact || {};
+  state = state || {};
 
-  // --- Paso 1: si nunca empezó ---
-  if (!state.started) {
-    state.started = true;
-    return { reply: policy.openings.warm_reception, state };
-  }
+  // prompt base con tu policy
+  const systemPrompt = `
+Sos un asistente de SkinCare.
+Usá estas reglas de estilo y comportamiento (JSON):
+${JSON.stringify(policy, null, 2)}
+Responde en primera persona, tono íntimo y cercano.
+`;
 
-  // --- Paso 2: pedir nombre si falta ---
-  if (!state.contact.name) {
-    // Guardar el nombre si parece que lo dio
-    if (/\b[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+/.test(message)) {
-      state.contact.name = message.trim();
-    } else {
-      return { reply: policy.openings.name_confirmation_hint, state };
-    }
-  }
+  // llamada a OpenAI
+  const completion = await client.chat.completions.create({
+    model: "gpt-4o-mini", // podés cambiar a otro modelo
+    temperature: 0.8,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: message },
+    ],
+  });
 
-  // --- Paso 3: pedir WhatsApp si falta ---
-  if (!state.contact.whatsapp) {
-    const phone = message.match(/\+?\d{7,15}/);
-    if (phone) {
-      state.contact.whatsapp = phone[0];
-    } else {
-      return { reply: policy.openings.whatsapp_request, state };
-    }
-  }
+  const reply = completion.choices[0]?.message?.content || "💖";
 
-  // --- Paso 4: preguntar por piel/cuerpo ---
-  if (!state.dataAsked) {
-    state.dataAsked = true;
-    return { reply: policy.openings.interest_probe, state };
-  }
-
-  // --- Paso 5: si ya tiene datos, ofrecer horarios ---
-  if (!state.offered) {
-    state.offered = true;
-    const opts = policy.scheduling.logic.offer_before_14;
-    return { reply: `Tengo disponible ${opts.join(" o ")}. ¿Cuál preferís?`, state };
-  }
-
-  // --- Paso 6: cierre ---
-  return { reply: "Gracias 💖 quedamos en contacto.", state };
+  return { reply, state };
 }
