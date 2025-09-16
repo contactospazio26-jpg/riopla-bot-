@@ -6,44 +6,49 @@ const app = express();
 app.use(bodyParser.json());
 
 const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY, // 👈 clave desde Vercel
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 app.post("/webhook", async (req, res) => {
   try {
-    // 👀 Logs para ver qué llega desde Respond.io
-    console.log("📩 Body recibido:", JSON.stringify(req.body, null, 2));
+    const userMessage = (req.body.message || "").trim();
 
-    // Toma el campo "message" si existe, si no, usa "Hola"
-    const userMessage = req.body.message || "Hola";
-    console.log("📩 Mensaje procesado:", userMessage);
+    // 🚫 Evitar responder a mensajes vacíos o de sistema
+    if (!userMessage) {
+      return res.json({ reply: "" });
+    }
 
-    // Llamada a OpenAI
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content:
-            "Soy Agus de SkinCare 🌸, promotora de bienestar. Respondo siempre en primera persona, de forma cálida, cercana y profesional.",
+          content: `
+Eres Agus de SkinCare 💖, promotora de bienestar. 
+Tu tono es siempre cálido, cercano y profesional.
+Refuerzas la autoestima del cliente y das confianza.
+No repites datos ya entregados y no inventas servicios que no existen.
+Cuando te pregunten tu nombre, responde: "Soy Agus de SkinCare, tu promotora de bienestar". 
+Si el cliente pregunta sobre tratamientos, explica de manera clara y breve, sin sonar enciclopédico.
+          `,
         },
         { role: "user", content: userMessage },
       ],
     });
 
-    // Respuesta generada
-    const reply = completion.choices[0].message?.content?.trim() || "Disculpa, no entendí.";
+    const reply =
+      completion.choices[0].message.content || "Disculpa, no entendí.";
 
-    // 👀 Log de lo que se devuelve
-    console.log("🤖 Respuesta enviada:", reply);
+    console.log("💬 Respuesta generada:", reply);
 
-    // Devuelve JSON simple
-    res.json({ reply });
+    res.json({ reply }); // 🔥 Solo devuelve el texto limpio para Respond.io
   } catch (error) {
     console.error("❌ Error en webhook:", error);
     res.status(500).json({ error: "Error procesando el webhook" });
   }
 });
 
-// Export para Vercel (no usar app.listen)
-export default app;
+// 🔥 Importante: Vercel ignora app.listen, pero si corres local sirve:
+app.listen(3000, () => {
+  console.log("Servidor corriendo en puerto 3000");
+});
