@@ -31,7 +31,7 @@ Responde en primera persona, tono íntimo y cercano.
     ],
   });
 
-  const reply = completion.choices[0]?.message?.content || "💖";
+  const reply = completion.choices[0]?.message?.content || "";
 
   return { reply, state };
 }
