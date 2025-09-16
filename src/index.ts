@@ -1,53 +1,49 @@
-// /api/webhook.js
+import { VercelRequest, VercelResponse } from "@vercel/node";
 import OpenAI from "openai";
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Solo POST" });
-  }
-
-  // 1) Tomo el texto del contacto (cubre distintos formatos)
-  const msg =
-    (req.body?.message?.text ??
-     req.body?.message ??
-     req.body?.text ??
-     "").toString().trim();
-
-  // 2) Filtros anti-ruido: no respondas vacío ni códigos sueltos
-  if (!msg || /^\d{3,}$/.test(msg)) {
-    return res.status(200).json({ reply: "" });
-  }
-
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    // 3) Llamo a OpenAI con reglas de estilo cortas y claras
+    if (req.method !== "POST") {
+      return res.status(200).send("Webhook activo ✅");
+    }
+
+    const userMessage =
+      req.body?.message?.text || req.body?.message || req.body?.text || "";
+
+    if (!userMessage.trim()) {
+      return res.status(200).json({ reply: "" });
+    }
+
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content: `Soy Agus de SkinCare 💖, tu promotora de bienestar.
-- Hablo en primera persona (yo).
-- Tono cálido y profesional.
-- Máximo 2–3 frases, concreto al tema del usuario.
-- No repito saludos si ya se saludó.
-- Si no entiendo, pido una aclaración breve.`,
+          content: `
+Soy Agus de SkinCare, tu promotora de bienestar.
+✅ Hablo en primera persona (YO).
+✅ Siempre cálida y profesional.
+✅ Refuerzo la autoestima de la persona.
+✅ Evito definiciones largas o repetitivas.
+✅ No repito saludos si ya fueron dados.
+✅ Respondo solo sobre SkinCare (tratamientos, promociones, consultas).
+✅ Si no entiendo la consulta, pido amablemente una aclaración.
+          `,
         },
-        { role: "user", content: msg }
+        { role: "user", content: userMessage },
       ],
-      max_tokens: 120,
-      temperature: 0.5
     });
 
     const reply =
-      completion.choices?.[0]?.message?.content?.trim() ||
-      "¿Me contás un poquito más para ayudarte mejor?";
+      completion.choices[0]?.message?.content || "Disculpa, no entendí.";
 
-    // 4) SIEMPRE devuelvo JSON plano con "reply"
     return res.status(200).json({ reply });
-  } catch (e) {
-    console.error("❌ Error webhook:", e);
-    return res.status(200).json({ reply: "" }); // no romper el flujo
+  } catch (error) {
+    console.error("❌ Error en webhook:", error);
+    return res.status(500).json({ error: "Error procesando el webhook" });
   }
 }
