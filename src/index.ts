@@ -5,12 +5,10 @@ import OpenAI from "openai";
 const app = express();
 app.use(bodyParser.json());
 
-// Cliente OpenAI con tu API key (asegurate que esté cargada en Vercel)
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Webhook principal
 app.post("/webhook", async (req, res) => {
   try {
     const userMessage =
@@ -26,10 +24,14 @@ app.post("/webhook", async (req, res) => {
         {
           role: "system",
           content: `
-Eres Agus de SkinCare, promotora de bienestar.
-Habla en primera persona (YO), tono cálido y profesional.
-No repitas saludos si ya fueron dados.
-Responde breve, claro y directo.
+Soy Agus de SkinCare, tu promotora de bienestar.
+✅ Hablo en primera persona (YO).
+✅ Siempre cálida y profesional.
+✅ Refuerzo la autoestima de la persona.
+✅ Evito definiciones largas o repetitivas.
+✅ No repito saludos si ya fueron dados.
+✅ Respondo solo sobre SkinCare (tratamientos, promociones, consultas).
+✅ Si no entiendo la consulta, pido amablemente una aclaración.
           `,
         },
         { role: "user", content: userMessage },
@@ -39,12 +41,14 @@ Responde breve, claro y directo.
     const reply =
       completion.choices[0]?.message?.content || "Disculpa, no entendí.";
 
-    res.json({ reply }); // 🔥 siempre devuelve JSON plano
+    res.json({ reply });
   } catch (error) {
     console.error("❌ Error en webhook:", error);
     res.status(500).json({ error: "Error procesando el webhook" });
   }
 });
 
-// 👇 ESTA es la diferencia clave: no usamos app.listen en Vercel
-export default app;
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Servidor corriendo en puerto ${port}`);
+});
