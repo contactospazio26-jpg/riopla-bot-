@@ -1,5 +1,13 @@
 {
   "name": "riopla-bot",
   "version": "1.0.0",
-  "type": "module"
+  "type": "module",
+  "main": "api/webhook.js",
+  "scripts": {
+    "start": "node api/webhook.js"
+  },
+  "engines": {
+    "node": "18.x"
+  },
+  "dependencies": {}
 }
