@@ -1,7 +1,7 @@
 {
   "name": "riopla-bot",
   "version": "1.0.0",
-  "type": "module",
+  "main": "api/webhook.js",
   "dependencies": {
     "openai": "^4.0.0"
   }
