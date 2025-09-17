@@ -2,9 +2,9 @@
   "name": "riopla-bot",
   "version": "1.0.0",
   "type": "module",
-  "main": "api/webhook.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node api/webhook.js"
+    "start": "node index.js"
   },
   "engines": {
     "node": "22.x"
