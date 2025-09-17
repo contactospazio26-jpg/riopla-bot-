@@ -6,11 +6,11 @@ const client = new OpenAI({
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  try {
-    if (req.method !== "POST") {
-      return res.status(200).send("Webhook activo ✅");
-    }
+  if (req.method !== "POST") {
+    return res.status(200).send("Webhook activo ✅");
+  }
 
+  try {
     const userMessage =
       req.body?.message?.text || req.body?.message || req.body?.text || "";
 
