@@ -3,7 +3,7 @@
 export default function handler(req, res) {
   if (req.method === "POST") {
     const { message } = req.body || {};
-    let reply = "Soy Agus de SkinCare 🌸, ¿cómo puedo ayudarte?";
+    let reply = "Soy Yo, Mia de SkinCare 🌸?";
 
     if (message && message.toLowerCase().includes("piel")) {
       reply = "Para cuidar tu piel necesito saber si es grasa, seca, mixta o sensible 💆‍♀️.";
