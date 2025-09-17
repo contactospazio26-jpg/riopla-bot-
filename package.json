@@ -1,10 +1,8 @@
 {
-  "name": "riopla-bot-test",
+  "name": "riopla-bot",
   "version": "1.0.0",
-  "scripts": {
-    "start": "node api/webhook.js"
-  },
+  "type": "module",
   "engines": {
-    "node": "20.x"
+    "node": "18.x"
   }
 }
